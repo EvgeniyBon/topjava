@@ -13,11 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
 @Repository
 public class InMemoryMealRepository implements MealRepository {
     private final Map<Integer, Meal> repository = new ConcurrentHashMap<>();
     private final AtomicInteger counter = new AtomicInteger(0);
     private static final Logger log = LoggerFactory.getLogger(InMemoryMealRepository.class);
+
     {
         MealsUtil.meals.forEach(this::save);
     }
@@ -34,7 +36,7 @@ public class InMemoryMealRepository implements MealRepository {
             return meal;
         }
         // handle case: update, but not present in storage
-        return repository.computeIfPresent(meal.getId(), (id,oldMeal) -> meal);
+        return repository.computeIfPresent(meal.getId(), (id, oldMeal) -> meal);
     }
 
     @Override
@@ -49,12 +51,15 @@ public class InMemoryMealRepository implements MealRepository {
 
     @Override
     public Collection<Meal> getAll(int userId) {
-        List<Meal>listUserMeals = new ArrayList<>();
-        repository.forEach((integer, meal) ->{
-            if(meal.getUserId()==userId) {
+        List<Meal> listUserMeals = new ArrayList<>();
+        repository.forEach((integer, meal) -> {
+            if (meal.getUserId() == userId) {
                 listUserMeals.add(meal);
             }
         });
+        synchronized (this) {
+            listUserMeals.sort((o1, o2) -> o2.getDateTime().compareTo(o1.getDateTime()));
+        }
         return listUserMeals;
     }
 }
