@@ -1,20 +1,29 @@
 package ru.javawebinar.topjava.repository.inmemory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.repository.MealRepository;
 import ru.javawebinar.topjava.util.MealsUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
+@Repository
 public class InMemoryMealRepository implements MealRepository {
     private final Map<Integer, Meal> repository = new ConcurrentHashMap<>();
     private final AtomicInteger counter = new AtomicInteger(0);
-
+    private static final Logger log = LoggerFactory.getLogger(InMemoryMealRepository.class);
     {
         MealsUtil.meals.forEach(this::save);
+    }
+
+    public Map<Integer, Meal> getRepository() {
+        return repository;
     }
 
     @Override
@@ -25,7 +34,7 @@ public class InMemoryMealRepository implements MealRepository {
             return meal;
         }
         // handle case: update, but not present in storage
-        return repository.computeIfPresent(meal.getId(), (id, oldMeal) -> meal);
+        return repository.computeIfPresent(meal.getId(), (id,oldMeal) -> meal);
     }
 
     @Override
@@ -39,8 +48,14 @@ public class InMemoryMealRepository implements MealRepository {
     }
 
     @Override
-    public Collection<Meal> getAll() {
-        return repository.values();
+    public Collection<Meal> getAll(int userId) {
+        List<Meal>listUserMeals = new ArrayList<>();
+        repository.forEach((integer, meal) ->{
+            if(meal.getUserId()==userId) {
+                listUserMeals.add(meal);
+            }
+        });
+        return listUserMeals;
     }
 }
 
